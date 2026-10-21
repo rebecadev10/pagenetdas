@@ -279,8 +279,8 @@
   // =========================================================================
   // 5. Configuración de Descarga & Generador de Código QR
   // =========================================================================
-  // Si alojas el APK en GitHub Releases o Drive, pega tu enlace directo aquí:
-  const CONFIG_APK_URL = ''; // Ej: 'https://github.com/usuario/repo/releases/download/v3.0/netdas-scada-v3.0.apk'
+  // Enlace oficial de GitHub Releases:
+  const CONFIG_APK_URL = 'https://github.com/rebecadev10/pagenetdas/releases/download/v3.0.0/netdas-scada-v3.0.apk';
 
   const downloadBtn = document.getElementById('apk-download-btn');
   let finalDownloadUrl = CONFIG_APK_URL;
