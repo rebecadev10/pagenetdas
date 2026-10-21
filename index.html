@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NET-DAS v3.0 | Control y Monitoreo de Subestaciones</title>
+  <meta name="description" content="App móvil para supervisión y telemetría en tiempo real de subestaciones eléctricas y relés de protección.">
+  <meta name="theme-color" content="#070B16">
+  
+  <link rel="icon" type="image/png" href="./assets/favicon.png">
+  <link rel="apple-touch-icon" href="./assets/icon.png">
+
+  <!-- Google Fonts: Inter + Plus Jakarta Sans + Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            appDark: '#070B16',
+            appCard: '#0A1224',
+            appBlue: '#081D56',
+            appCyan: '#00F0FF',
+            appGreen: '#10B981',
+            appAmber: '#F59E0B',
+            appRed: '#EF4444'
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+            heading: ['"Space Grotesk"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="bg-[#070B16] text-slate-100 font-sans antialiased selection:bg-cyan-500 selection:text-black overflow-x-hidden min-h-screen">
+
+  <!-- Dynamic Electric Canvas (Background) -->
+  <canvas id="electric-canvas" class="fixed inset-0 pointer-events-none z-0 opacity-40"></canvas>
+  <div class="fixed inset-0 bg-radial-gradient pointer-events-none z-0"></div>
+
+  <!-- Scroll Lightning Conduit (Rayo animado al hacer scroll, sin sonido) -->
+  <div id="lightning-conduit" class="fixed right-3 sm:right-6 top-0 bottom-0 w-1.5 z-40 pointer-events-none">
+    <div class="conduit-track absolute inset-0 bg-slate-800/40 rounded-full border border-cyan-500/20"></div>
+    <div id="scroll-lightning-spark" class="absolute -left-3 w-8 h-8 rounded-full pointer-events-none flex items-center justify-center">
+      <div class="w-3.5 h-3.5 rounded-full bg-cyan-300 shadow-[0_0_15px_#00f0ff,0_0_25px_#00f0ff] animate-ping opacity-80"></div>
+      <div class="absolute w-2 h-2 rounded-full bg-white shadow-[0_0_8px_#ffffff]"></div>
+      <svg class="absolute w-5 h-5 text-cyan-200 filter drop-shadow-[0_0_8px_#00f0ff]" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+      </svg>
+    </div>
+    <canvas id="scroll-lightning-canvas" class="fixed inset-0 pointer-events-none z-30"></canvas>
+  </div>
+
+  <!-- Clean, Modern Header (Sin audio, sin revista, sin saturación) -->
+  <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 px-4 sm:px-8 pt-4" id="main-header">
+    <div class="max-w-6xl mx-auto">
+      <div class="flex items-center justify-between h-20 border border-slate-800/90 backdrop-blur-2xl bg-[#070B16]/90 px-5 sm:px-7 rounded-2xl shadow-xl shadow-cyan-950/20">
+        
+        <!-- App Logo & Title -->
+        <a href="#hero" class="flex items-center gap-3.5 group shrink-0">
+          <div class="brand-icon-wrapper relative rounded-xl p-0.5 bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-600 shadow-lg shadow-cyan-500/30 group-hover:shadow-cyan-400/50 transition-all">
+            <img src="./assets/icon.png" alt="NET-DAS Icon" class="rounded-[10px]">
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-heading font-black text-xl sm:text-2xl tracking-tight text-white group-hover:text-cyan-400 transition-colors">NET-DAS</span>
+              <span class="px-2 py-0.5 text-[11px] font-bold font-mono tracking-widest bg-cyan-950 text-cyan-300 border border-cyan-500/40 rounded-full">v3.0</span>
+            </div>
+            <p class="text-xs text-slate-400 font-medium">Control de Subestaciones</p>
+          </div>
+        </a>
+
+        <!-- Desktop Navigation Links -->
+        <nav class="hidden md:flex items-center gap-8 text-base font-semibold text-slate-300">
+          <a href="#solucion" class="hover:text-cyan-400 transition-colors">¿Por qué la app?</a>
+          <a href="#beneficios" class="hover:text-cyan-400 transition-colors">Beneficios</a>
+          <a href="#vistas" class="hover:text-cyan-400 transition-colors">Vistas de la App</a>
+          <a href="#como-instalar" class="hover:text-cyan-400 transition-colors">Instalación</a>
+        </nav>
+
+        <!-- Right Header CTA -->
+        <div class="flex items-center gap-3">
+          <a href="#descarga" class="btn-glow px-5 py-2.5 rounded-xl text-sm sm:text-base font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-lg shadow-blue-900/40 hover:shadow-cyan-500/40 flex items-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0 transition-all">
+            <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            <span>Descargar APK</span>
+          </a>
+
+          <!-- Mobile Hamburger Toggle -->
+          <button id="mobile-menu-btn" class="md:hidden p-2.5 rounded-xl border border-slate-700 bg-slate-900 text-slate-200 hover:text-cyan-400" aria-label="Abrir menú">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Mobile Dropdown Menu -->
+      <div id="mobile-menu" class="hidden md:hidden mt-2 p-5 rounded-2xl bg-slate-900/95 border border-cyan-500/30 backdrop-blur-xl shadow-2xl space-y-3 text-center">
+        <a href="#solucion" class="mobile-nav-link block text-base font-bold text-slate-200 hover:text-cyan-400 py-1">¿Por qué la app?</a>
+        <a href="#beneficios" class="mobile-nav-link block text-base font-bold text-slate-200 hover:text-cyan-400 py-1">Beneficios</a>
+        <a href="#vistas" class="mobile-nav-link block text-base font-bold text-slate-200 hover:text-cyan-400 py-1">Vistas de la App</a>
+        <a href="#como-instalar" class="mobile-nav-link block text-base font-bold text-slate-200 hover:text-cyan-400 py-1">Instalación</a>
+        <a href="#descarga" class="mobile-nav-link block text-base font-bold text-cyan-300 hover:text-white py-1">Descargar APK</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 pt-28 sm:pt-36">
+    
+    <!-- Hero Section -->
+    <section id="hero" class="relative min-h-[88vh] flex items-center py-8 lg:py-16 overflow-hidden">
+      <!-- Ambient Lights -->
+      <div class="absolute -top-32 left-1/4 w-[450px] h-[450px] bg-cyan-600/20 rounded-full blur-[140px] pointer-events-none"></div>
+      <div class="absolute top-1/2 -right-20 w-[450px] h-[450px] bg-blue-600/20 rounded-full blur-[150px] pointer-events-none"></div>
+
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          
+          <!-- Hero Text (Left Column) -->
+          <div class="lg:col-span-7 space-y-7 text-center lg:text-left">
+            
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900/90 border border-cyan-500/30 text-xs sm:text-sm font-mono text-cyan-300">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="font-bold tracking-wider">APP MÓVIL EN TIEMPO REAL</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl lg:text-7xl font-heading font-black tracking-tight leading-[1.08] text-white">
+              Toda la subestación <br>
+              <span class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-white">en la palma</span> de tu mano.
+            </h1>
+
+            <p class="text-lg sm:text-xl text-slate-300 max-w-xl mx-auto lg:mx-0 leading-relaxed font-light">
+              La solución móvil de telemetría y supervisión SCADA para subestaciones eléctricas. Monitorea el <strong class="text-cyan-300 font-semibold">esquema unifilar de 12.47 kV</strong>, el estado de los relés VAMP y las variables eléctricas en tiempo real desde cualquier lugar con enlace seguro VPN.
+            </p>
+
+            <!-- Metrics Pills -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 py-1 max-w-lg mx-auto lg:mx-0 font-mono text-center">
+              <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div class="text-2xl sm:text-3xl font-black text-cyan-400">12.47 kV</div>
+                <div class="text-xs text-slate-400 mt-0.5">Unifilar en Vivo</div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div class="text-2xl sm:text-3xl font-black text-emerald-400">0 ms</div>
+                <div class="text-xs text-slate-400 mt-0.5">Alertas al Instante</div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800">
+                <div class="text-2xl sm:text-3xl font-black text-indigo-400">VPN</div>
+                <div class="text-xs text-slate-400 mt-0.5">Enlace Cifrado</div>
+              </div>
+            </div>
+
+            <!-- Action CTAs -->
+            <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              <a href="#descarga" class="w-full sm:w-auto px-8 py-4 rounded-2xl font-black text-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-xl shadow-cyan-950/50 hover:shadow-cyan-500/30 border border-cyan-400/30 flex items-center justify-center gap-3 transform hover:-translate-y-1 transition-all">
+                <svg class="w-6 h-6 text-cyan-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>Descargar APK (Android)</span>
+              </a>
+
+              <a href="#vistas" class="w-full sm:w-auto px-7 py-4 rounded-2xl font-bold text-lg bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700 hover:border-cyan-400/50 flex items-center justify-center gap-2.5 transition-all">
+                <span>Ver Pantallas Reales</span>
+                <span class="text-cyan-400">↓</span>
+              </a>
+            </div>
+
+          </div>
+
+          <!-- Hero Phone Mockup with Real App Screenshot Look (Right Column) -->
+          <div class="lg:col-span-5 flex justify-center">
+            <div class="relative w-full max-w-[340px] sm:max-w-[370px]">
+              
+              <!-- Subtle Cyan Glow -->
+              <div class="absolute -inset-2 bg-gradient-to-tr from-cyan-500/30 to-blue-600/30 rounded-[48px] blur-2xl opacity-60"></div>
+
+              <!-- Smartphone Frame matching app screenshot exactly -->
+              <div class="relative bg-[#070B16] rounded-[44px] p-2.5 shadow-2xl border-4 border-slate-700/80 ring-1 ring-cyan-500/30 overflow-hidden phone-mockup">
+                
+                <!-- Phone Top Bar -->
+                <div class="flex items-center justify-between px-6 pt-2 pb-2 text-xs font-mono text-slate-300">
+                  <span id="phone-clock" class="font-bold">9:40 a. m.</span>
+                  <div class="w-20 h-4 bg-black rounded-full flex items-center justify-center gap-1.5 px-2">
+                    <span class="w-2 h-2 rounded-full bg-slate-900 border border-slate-700"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping"></span>
+                  </div>
+                  <div class="flex items-center gap-1.5 text-[10px]">
+                    <span class="text-cyan-400 font-bold">4G</span>
+                    <svg class="w-3.5 h-3.5 text-emerald-400" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                    <span>54%</span>
+                  </div>
+                </div>
+
+                <!-- Phone Internal Screen (Recreating Screenshot 1: Gestión de Subestaciones) -->
+                <div class="bg-[#090F1E] rounded-[32px] overflow-hidden border border-slate-800 flex flex-col h-[560px] text-xs select-none">
+                  
+                  <!-- App Header inside phone -->
+                  <div class="p-4 flex items-center justify-between border-b border-slate-800/60 bg-[#0B132B]/80">
+                    <div class="flex items-center gap-3">
+                      <div class="w-9 h-9 rounded-xl bg-[#081D56] border border-cyan-500/40 flex items-center justify-center p-1 shadow-md">
+                        <img src="./assets/favicon.png" class="w-5 h-5 object-contain" alt="mini icon">
+                      </div>
+                      <div>
+                        <div class="font-black text-sm text-white tracking-wider">NET-DAS</div>
+                        <div class="text-[10px] font-mono text-cyan-400">v3.0 · CONTROL</div>
+                      </div>
+                    </div>
+                    <span class="px-3 py-1 text-[11px] font-mono font-bold bg-[#0A3A2F] border border-[#158066] text-[#34D399] rounded-full flex items-center gap-1.5">
+                      <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ONLINE
+                    </span>
+                  </div>
+
+                  <!-- Phone Body Content -->
+                  <div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scroll font-sans">
+                    
+                    <!-- Title inside app -->
+                    <div>
+                      <h3 class="text-xl font-black text-white">
+                        Gestión de <span class="text-cyan-400">Subestaciones</span>
+                      </h3>
+                      <p class="text-[11px] text-slate-400 mt-0.5">Supervisión y control de subestaciones eléctricas</p>
+                    </div>
+
+                    <!-- 3 Status Pills like in Screenshot 1 -->
+                    <div class="grid grid-cols-3 gap-2 p-2 rounded-2xl bg-[#081D56]/50 border border-slate-800 text-[10px]">
+                      <div class="p-2 text-center">
+                        <div class="text-slate-400">ENLACE</div>
+                        <div class="text-emerald-400 font-bold mt-0.5">ESTABLE</div>
+                      </div>
+                      <div class="p-2 text-center border-x border-slate-800">
+                        <div class="text-slate-400">Ides</div>
+                        <div class="text-cyan-300 font-bold mt-0.5">3/3 Activos</div>
+                      </div>
+                      <div class="p-2 text-center">
+                        <div class="text-slate-400">ALARMAS</div>
+                        <div class="text-amber-400 font-bold mt-0.5">00 Activas</div>
+                      </div>
+                    </div>
+
+                    <!-- Substation Card (Screenshot 1) -->
+                    <div class="p-4 rounded-2xl bg-[#081D56] border border-cyan-500/30 shadow-lg space-y-3">
+                      <div class="flex justify-between items-start">
+                        <div>
+                          <div class="text-sm font-extrabold text-white flex items-center gap-1.5">
+                            <span class="text-cyan-400">⚡</span> Subestación Intevep
+                          </div>
+                          <div class="text-[10px] text-slate-400 mt-0.5">📍 Los Teques, VE</div>
+                        </div>
+                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#0A3A2F] text-emerald-300 border border-[#158066]">
+                          ● OPERATIVO
+                        </span>
+                      </div>
+
+                      <!-- Substation Mini Metrics -->
+                      <div class="grid grid-cols-3 gap-2 text-center py-2 border-y border-slate-800/80 text-[11px]">
+                        <div>
+                          <span class="text-slate-400 block text-[9px]">DISPOSITIVOS</span>
+                          <span class="font-bold text-white font-mono">3 Ides</span>
+                        </div>
+                        <div>
+                          <span class="text-slate-400 block text-[9px]">TENSIÓN</span>
+                          <span class="font-bold text-cyan-300 font-mono">13.95 kV</span>
+                        </div>
+                        <div>
+                          <span class="text-slate-400 block text-[9px]">EVENTOS</span>
+                          <span class="font-bold text-amber-300 font-mono">🔔 0</span>
+                        </div>
+                      </div>
+
+                      <!-- Button inside card -->
+                      <a href="#vistas" class="block w-full py-2 text-center rounded-xl font-bold text-xs bg-slate-900/90 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all">
+                        Monitorear &gt;
+                      </a>
+                    </div>
+
+                    <!-- Register Button (Screenshot 1) -->
+                    <div class="pt-2 flex justify-center">
+                      <div class="px-6 py-2.5 rounded-full bg-white text-[#081D56] font-extrabold text-xs shadow-md flex items-center gap-2">
+                        <span class="text-base font-bold">+</span> REGISTRAR
+                      </div>
+                    </div>
+
+                  </div>
+
+                  <!-- App Bottom Navigation inside phone -->
+                  <div class="bg-[#070B16] border-t border-slate-800/80 p-2 flex justify-around items-center text-[10px] font-sans">
+                    <div class="text-slate-400 flex flex-col items-center">
+                      <span>🏠</span>
+                      <span class="text-[9px]">Inicio</span>
+                    </div>
+                    <div class="text-slate-400 flex flex-col items-center">
+                      <span>📊</span>
+                      <span class="text-[9px]">Resumen</span>
+                    </div>
+                    <div class="text-cyan-400 font-bold flex flex-col items-center">
+                      <span>⚡</span>
+                      <span class="text-[9px]">SCADA</span>
+                    </div>
+                    <div class="text-slate-400 flex flex-col items-center">
+                      <span>📋</span>
+                      <span class="text-[9px]">Datos</span>
+                    </div>
+                    <div class="text-slate-400 flex flex-col items-center">
+                      <span>🔔</span>
+                      <span class="text-[9px]">Eventos</span>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: ¿Por qué NET-DAS Mobile? -->
+    <section id="solucion" class="py-20 sm:py-28 relative border-t border-slate-800/80 bg-gradient-to-b from-[#070B16] via-[#091122] to-[#070B16]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-950/80 border border-blue-500/40 text-xs sm:text-sm font-mono text-cyan-300 font-bold">
+            <span>EFICIENCIA OPERATIVA</span>
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-heading font-black tracking-tight text-white">
+            ¿Por qué NET-DAS Mobile?
+          </h2>
+          <p class="text-slate-300 text-lg sm:text-xl leading-relaxed font-light">
+            La supervisión tradicional dependía de consolas fijas en salas de control o traslados presenciales para verificar relés y disparos. NET-DAS Mobile transforma la gestión operativa en movilidad total.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Card: El Problema Anterior -->
+          <div class="p-8 rounded-3xl bg-slate-900/60 border border-slate-800/80 space-y-4">
+            <div class="w-12 h-12 rounded-2xl bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-xl border border-red-500/30">
+              ✕
+            </div>
+            <h3 class="text-2xl font-bold text-white">Como se hacía antes</h3>
+            <ul class="space-y-3 text-slate-300 text-base leading-relaxed">
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 font-bold">•</span>
+                <span>Dependencia absoluta de consolas SCADA pesadas de escritorio.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 font-bold">•</span>
+                <span>Si ocurría un disparo o alarma en una línea, el operador debía trasladarse físicamente hasta la bahía para leer la pantalla del relé.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-red-400 font-bold">•</span>
+                <span>Pérdida de tiempo valioso en situaciones de contingencia eléctrica.</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Card: La Solución con la App -->
+          <div class="p-8 rounded-3xl bg-gradient-to-br from-[#081D56] to-[#0A1224] border border-cyan-500/40 space-y-4 shadow-xl">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center font-bold text-xl border border-cyan-500/30">
+              ✓
+            </div>
+            <h3 class="text-2xl font-bold text-white">Con NET-DAS Mobile</h3>
+            <ul class="space-y-3 text-slate-200 text-base leading-relaxed">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span>Abres la app en tu teléfono, activas la VPN y ves el estado de la subestación en 2 segundos.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span>Esquema unifilar dinámico: sabes de inmediato si el interruptor 52 está abierto o cerrado.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-400 font-bold">•</span>
+                <span>Lectura directa de magnitudes de los relés VAMP (voltaje, corriente, potencia activa y reactiva).</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 2: Beneficios de la App -->
+    <section id="beneficios" class="py-20 sm:py-28 relative border-t border-slate-800">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-xs sm:text-sm font-mono text-cyan-300 font-bold">
+            <span>DISEÑADA PARA OPERADORES E INGENIEROS</span>
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-heading font-black tracking-tight text-white">
+            Beneficios Clave de la App
+          </h2>
+          <p class="text-slate-300 text-lg leading-relaxed font-light">
+            Herramientas pensadas para que el trabajo diario en la subestación sea más rápido, seguro y accesible.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          
+          <!-- Beneficio 1 -->
+          <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-cyan-400/50 transition-all space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-2xl font-bold">
+              ⚡
+            </div>
+            <h3 class="text-xl font-bold text-white">Esquema Unifilar en Vivo</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+              Visualiza en tiempo real las barras de 12.47 kV (Barra A7 y B9), interruptores 52-1 y 52-2 con código de colores (Verde = Cerrado, Rojo = Abierto) y las corrientes por salida.
+            </p>
+          </div>
+
+          <!-- Beneficio 2 -->
+          <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-cyan-400/50 transition-all space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center text-2xl font-bold">
+              📊
+            </div>
+            <h3 class="text-xl font-bold text-white">Telemetría VAMP Completa</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+              Consulta en una sola pantalla los voltajes de línea ($U_{12}, U_{23}, U_{31}$), corrientes de fase ($I_{L1}, I_{L2}, I_{L3}$), potencias activa, reactiva ($Q$), factor de potencia y los LEDs de estado (Power, Com, Alarm, Trip).
+            </p>
+          </div>
+
+          <!-- Beneficio 3 -->
+          <div class="p-8 rounded-3xl bg-slate-900/80 border border-slate-800 hover:border-cyan-400/50 transition-all space-y-3">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl font-bold">
+              🔒
+            </div>
+            <h3 class="text-xl font-bold text-white">Conexión VPN Cifrada</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+              Comunícate de forma segura con la red operativa mediante certificados TLS y túnel VPN. Toda la información viaja protegida y solo personal autorizado tiene acceso.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 3: Vistas Reales de la App (Basadas en las capturas) -->
+    <section id="vistas" class="py-20 sm:py-28 relative border-t border-slate-800 bg-[#080D1A]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-500/40 text-xs sm:text-sm font-mono text-cyan-300 font-bold">
+            <span>CONOCE LA INTERFAZ</span>
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-heading font-black tracking-tight text-white">
+            Así se ve NET-DAS Mobile
+          </h2>
+          <p class="text-slate-300 text-lg leading-relaxed font-light">
+            Interfaz oscura moderna, limpia y diseñada específicamente para facilitar la lectura bajo cualquier condición de luz.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          <!-- Vista 1: Gestión de Subestaciones -->
+          <div class="rounded-3xl bg-[#091022] border border-slate-800 p-6 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-cyan-400 font-bold">VISTA 1</span>
+              <span class="text-slate-400">Pantalla Principal</span>
+            </div>
+            <div class="rounded-2xl bg-[#081D56] p-4 border border-cyan-500/30 text-xs space-y-3">
+              <div class="flex justify-between items-center">
+                <span class="font-bold text-white">Subestación Intevep</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#0A3A2F] text-emerald-300 border border-[#158066]">OPERATIVO</span>
+              </div>
+              <div class="text-[10px] text-slate-400">📍 Los Teques, VE</div>
+              <div class="grid grid-cols-3 gap-2 text-center py-2 border-y border-slate-700/60 font-mono text-[11px]">
+                <div><span class="text-slate-400 block text-[9px]">DISPOSITIVOS</span>3 Ides</div>
+                <div><span class="text-slate-400 block text-[9px]">TENSIÓN</span>13.95 kV</div>
+                <div><span class="text-slate-400 block text-[9px]">EVENTOS</span>🔔 0</div>
+              </div>
+              <div class="text-center font-bold text-cyan-300 text-[11px]">Monitorear &gt;</div>
+            </div>
+            <h4 class="text-lg font-bold text-white">Gestión de Subestaciones</h4>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Resumen global con estado del enlace (Estable), cantidad de Ides activos (3/3) y contador de alarmas en tiempo real.
+            </p>
+          </div>
+
+          <!-- Vista 2: Esquema Unifilar 12.47 kV -->
+          <div class="rounded-3xl bg-[#091022] border border-cyan-500/30 p-6 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-cyan-400 font-bold">VISTA 2</span>
+              <span class="text-emerald-400 font-bold">Esquema SCADA</span>
+            </div>
+            <div class="rounded-2xl bg-[#070B16] p-4 border border-slate-800 text-xs space-y-3 font-mono">
+              <div class="text-[10px] text-slate-400 text-center">ESQUEMA UNIFILAR 12.47 kV</div>
+              <div class="grid grid-cols-2 gap-3 text-center">
+                <div class="p-2 rounded bg-slate-900 border border-red-500/40">
+                  <span class="text-[10px] text-slate-400 block">LÍNEA A7</span>
+                  <span class="text-red-400 font-bold">52-1 [INCI]</span>
+                  <div class="h-1 bg-red-500 rounded my-1"></div>
+                  <span class="text-[9px] text-slate-400">BARRA A7 (12.47 kV)</span>
+                </div>
+                <div class="p-2 rounded bg-slate-900 border border-emerald-500/40">
+                  <span class="text-[10px] text-slate-400 block">LÍNEA B9</span>
+                  <span class="text-emerald-400 font-bold">52-2 [CERR]</span>
+                  <div class="h-1 bg-emerald-500 rounded my-1"></div>
+                  <span class="text-[9px] text-slate-400">BARRA B9 (12.47 kV)</span>
+                </div>
+              </div>
+              <div class="flex justify-around text-[9px] text-slate-400">
+                <span>Salida A2: 98A</span>
+                <span>Salida A1: 102A</span>
+              </div>
+            </div>
+            <h4 class="text-lg font-bold text-white">Esquema Unifilar 12.47 kV</h4>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Visualización gráfica con código de colores instantáneo para verificar el estado de apertura/cierre de los interruptores y líneas de alimentación.
+            </p>
+          </div>
+
+          <!-- Vista 3: Telemetría VAMP 255 -->
+          <div class="rounded-3xl bg-[#091022] border border-slate-800 p-6 space-y-4 shadow-xl">
+            <div class="flex justify-between items-center text-xs font-mono">
+              <span class="text-cyan-400 font-bold">VISTA 3</span>
+              <span class="text-slate-400">Detalle de Bahía</span>
+            </div>
+            <div class="rounded-2xl bg-[#081D56] p-4 border border-cyan-500/30 text-xs space-y-3 font-mono">
+              <div class="flex justify-between text-[11px] font-bold text-white">
+                <span>VAMP 255 - Línea A7</span>
+                <span class="text-emerald-300">52-1 CERRADO</span>
+              </div>
+              <div class="flex justify-between text-[9px] text-slate-300 border-b border-slate-700/60 pb-1">
+                <span class="text-emerald-400">● Power</span>
+                <span class="text-emerald-400">● Com</span>
+                <span class="text-slate-500">○ Alarm</span>
+                <span class="text-slate-500">○ Trip</span>
+              </div>
+              <div class="grid grid-cols-2 gap-2 text-[10px]">
+                <div><span class="text-slate-400 block">U12:</span>13.96 kV</div>
+                <div><span class="text-slate-400 block">IL1:</span>7 A</div>
+                <div><span class="text-slate-400 block">P (Activa):</span>-94 kW</div>
+                <div><span class="text-slate-400 block">Q (Reactiva):</span>4 kvar</div>
+              </div>
+            </div>
+            <h4 class="text-lg font-bold text-white">Telemetría VAMP 255</h4>
+            <p class="text-slate-400 text-xs leading-relaxed">
+              Lectura profunda de variables eléctricas primarias, potencias y estado de comunicación del relé de protección.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 4: Cómo Instalar -->
+    <section id="como-instalar" class="py-20 sm:py-28 relative border-t border-slate-800">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 border border-slate-700 text-xs sm:text-sm font-mono text-slate-300 font-bold">
+            <span>PASO A PASO</span>
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-heading font-black tracking-tight text-white">
+            ¿Cómo instalar la app en tu teléfono?
+          </h2>
+          <p class="text-slate-300 text-lg leading-relaxed font-light">
+            Es un archivo APK directo para Android. No necesitas pasar por tiendas externas ni configurar servidores.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 font-bold text-lg flex items-center justify-center font-mono">1</div>
+            <h4 class="text-lg font-bold text-white">Descarga el APK</h4>
+            <p class="text-slate-400 text-sm leading-relaxed">Haz clic en el botón de descarga en esta página o escanea el código QR directamente con la cámara de tu teléfono.</p>
+          </div>
+          <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 font-bold text-lg flex items-center justify-center font-mono">2</div>
+            <h4 class="text-lg font-bold text-white">Permite la instalación</h4>
+            <p class="text-slate-400 text-sm leading-relaxed">Al abrir el archivo, Android te preguntará si deseas instalar aplicaciones de orígenes desconocidos. Confirma para continuar.</p>
+          </div>
+          <div class="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 font-bold text-lg flex items-center justify-center font-mono">3</div>
+            <h4 class="text-lg font-bold text-white">Conéctate a la VPN</h4>
+            <p class="text-slate-400 text-sm leading-relaxed">Abre la app, introduce tus credenciales y activa el enlace VPN para empezar a recibir la telemetría de la subestación.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Section 5: Centro de Descarga y Código QR -->
+    <section id="descarga" class="py-24 sm:py-32 relative border-t border-slate-800 bg-gradient-to-b from-[#070B16] via-[#091122] to-[#070B16]">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto mb-16 space-y-4">
+          <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-950/80 border border-emerald-500/50 text-xs sm:text-sm font-mono text-emerald-400 font-bold">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>DESCARGA DISPONIBLE</span>
+          </div>
+          <h2 class="text-3xl sm:text-6xl font-heading font-black tracking-tight text-white">
+            Descargar NET-DAS v3.0
+          </h2>
+          <p class="text-slate-300 text-lg sm:text-xl leading-relaxed font-light">
+            Instalador oficial para teléfonos Android. Rápido, autónomo y listo para usar.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+          
+          <!-- Download Box (Left) -->
+          <div class="lg:col-span-7 p-8 sm:p-10 rounded-3xl bg-slate-900/90 border border-cyan-500/40 shadow-2xl flex flex-col justify-between">
+            <div class="space-y-6">
+              
+              <div class="flex items-center gap-5">
+                <div class="brand-icon-wrapper-large w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 via-blue-600 to-indigo-600 p-0.5 shadow-2xl shrink-0">
+                  <img src="./assets/icon.png" class="w-full h-full object-cover rounded-[14px]" alt="NetDas Icon">
+                </div>
+                <div>
+                  <h3 class="text-2xl sm:text-3xl font-black text-white">NET-DAS SCADA Mobile</h3>
+                  <p class="text-xs sm:text-sm font-mono text-cyan-300">v3.0.0 · Android APK</p>
+                  <div class="flex items-center gap-2 mt-2">
+                    <span class="px-3 py-1 rounded text-xs font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">BUILD STANDALONE</span>
+                    <span class="text-xs text-slate-400 font-mono">No requiere Metro server</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Technical Details -->
+              <div class="grid grid-cols-2 gap-3.5 font-mono text-xs sm:text-sm">
+                <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                  <span class="text-slate-400 block text-xs">COMPATIBILIDAD</span>
+                  <span class="text-cyan-300 font-bold text-base">Android 10+</span>
+                </div>
+                <div class="p-4 rounded-2xl bg-slate-950 border border-slate-800">
+                  <span class="text-slate-400 block text-xs">ENLACE SEGURO</span>
+                  <span class="text-emerald-400 font-bold text-base">TLS / VPN Ready</span>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-slate-950/80 border border-slate-800 text-xs text-slate-300">
+                La aplicación incluye el bundle de React Native embebido, por lo que funciona de manera 100% independiente en cualquier teléfono sin necesidad de cables ni computadoras conectadas.
+              </div>
+
+            </div>
+
+            <!-- Download Button -->
+            <div class="pt-8">
+              <a href="./assets/netdas-scada-v3.0.apk" download="netdas-scada-v3.0.apk" id="apk-download-btn" class="w-full py-5 px-8 rounded-2xl font-black text-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 text-white shadow-2xl shadow-blue-950/50 hover:shadow-cyan-500/40 border border-cyan-400/40 flex items-center justify-center gap-3 transform hover:-translate-y-1 active:translate-y-0 transition-all">
+                <svg class="w-7 h-7 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                <span>Descargar APK Directo</span>
+              </a>
+              <p class="text-center text-xs text-slate-400 mt-2 font-mono">
+                Descarga directa local de alta velocidad.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- QR Code Box (Right) -->
+          <div class="lg:col-span-5 p-8 sm:p-10 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl flex flex-col items-center justify-between text-center">
+            
+            <div class="space-y-2">
+              <span class="text-xs sm:text-sm font-mono text-cyan-400 uppercase tracking-widest font-black">DESCARGA MÓVIL DIRECTA</span>
+              <h3 class="text-2xl font-bold text-white">Escanea con tu Teléfono</h3>
+              <p class="text-xs sm:text-sm text-slate-300 max-w-xs">
+                Abre la cámara de tu smartphone Android o cualquier lector QR para iniciar la descarga del instalador inmediatamente.
+              </p>
+            </div>
+
+            <!-- QR Code -->
+            <div class="my-6 p-4 rounded-3xl bg-white shadow-2xl shadow-cyan-500/20 border-4 border-cyan-400 relative group">
+              <div id="qr-code-canvas-container" class="w-48 h-48 sm:w-60 sm:h-60 flex items-center justify-center">
+                <!-- SVG QR Code rendered by app.js -->
+              </div>
+            </div>
+
+            <!-- Copy Link Button -->
+            <div class="w-full space-y-2">
+              <button id="copy-link-btn" class="w-full py-3.5 px-4 rounded-xl text-xs sm:text-sm font-mono font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 hover:border-cyan-400 transition-all flex items-center justify-center gap-2">
+                <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                <span id="copy-link-text">Copiar Enlace de Descarga</span>
+              </button>
+              <div class="text-xs font-mono text-slate-400 break-all" id="qr-target-url">
+                ...
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Clean Minimal Footer -->
+  <footer class="border-t border-slate-800 bg-[#050811] py-10 relative z-10 text-xs sm:text-sm text-slate-400">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-slate-700">
+          <img src="./assets/icon.png" class="w-full h-full object-cover" alt="NetDas footer logo">
+        </div>
+        <div>
+          <div class="font-bold text-white">NET-DAS v3.0 SCADA Mobile</div>
+          <div class="text-xs text-slate-500">Monitoreo de Subestaciones Eléctricas</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-6 font-mono text-xs">
+        <a href="#hero" class="text-cyan-400 hover:underline">Volver arriba ↑</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+/* ==========================================================================
+   NET-DAS® SCADA Mobile — Design System & Custom Stylesheet
+   Guía de Diseño: Claude Skills (Landing Page Generator + UI Design System)
+   Paleta: Dark SCADA Industrial + Neón Cian + Carmesí PDVSA + Esmeralda
+   ========================================================================== */
+
+:root {
+  --bg-main: #070B16;
+  --bg-card: #0A0F1D;
+  --bg-card-sub: #0D1629;
+  --bg-accent-blue: #081D56;
+  
+  --cyan-neon: #00F0FF;
+  --cyan-sub: #38BDF8;
+  --cyan-instrument: #62A2E5;
+  
+  --red-pdvsa: #DC2626;
+  --red-deep: #B91C1C;
+  --red-crimson: #7F1D1D;
+  
+  --emerald-online: #10B981;
+  --amber-warn: #F59E0B;
+  
+  --text-main: #F8FAFC;
+  --text-muted: #94A3B8;
+  --text-dark: #64748B;
+  
+  --border-subtle: rgba(56, 189, 248, 0.15);
+  --border-glow: rgba(0, 240, 255, 0.4);
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-heading: 'Space Grotesk', sans-serif;
+}
+
+/* Strict Image & Element Constraints (Prevents 1024px explosion) */
+img, svg, canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.brand-icon-wrapper {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  min-height: 48px !important;
+  max-height: 48px !important;
+  overflow: hidden !important;
+  border-radius: 12px !important;
+}
+
+.brand-icon-wrapper img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.brand-icon-wrapper-mini {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  max-width: 28px !important;
+  overflow: hidden !important;
+}
+
+.brand-icon-wrapper-large {
+  width: 80px !important;
+  height: 80px !important;
+  min-width: 80px !important;
+  max-width: 80px !important;
+  overflow: hidden !important;
+}
+
+/* Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-family: var(--font-sans);
+  background-color: var(--bg-main);
+  color: var(--text-main);
+}
+
+body {
+  background-color: var(--bg-main);
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(8, 29, 86, 0.5) 0%, transparent 60%),
+    radial-gradient(circle at 100% 40%, rgba(220, 38, 38, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 0% 70%, rgba(0, 240, 255, 0.08) 0%, transparent 50%);
+  background-attachment: fixed;
+  overflow-x: hidden;
+}
+
+/* Modern Typography Utilities */
+.font-mono { font-family: var(--font-mono); }
+.font-heading { font-family: var(--font-heading); }
+
+/* Electric Canvas Layer */
+#electric-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Subtle Animated Radial Glows */
+.bg-radial-gradient {
+  background: radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.05) 0%, transparent 70%);
+}
+
+/* =========================================================================
+   SCROLL LIGHTNING CONDUIT & RAY EFFECT
+   ========================================================================= */
+#lightning-conduit {
+  transition: opacity 0.3s ease;
+}
+
+.conduit-track {
+  background: linear-gradient(to bottom, 
+    rgba(6, 182, 212, 0.2), 
+    rgba(220, 38, 38, 0.2), 
+    rgba(6, 182, 212, 0.2));
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+}
+
+#scroll-lightning-spark {
+  top: 0;
+  transition: top 0.1s cubic-bezier(0.1, 0.8, 0.2, 1);
+  filter: drop-shadow(0 0 12px #00F0FF);
+}
+
+#scroll-lightning-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 35;
+}
+
+/* Custom Glows & Shadows */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.btn-glow::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(60deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transform: rotate(45deg);
+  transition: all 0.6s ease;
+  pointer-events: none;
+}
+
+.btn-glow:hover::after {
+  left: 100%;
+}
+
+/* 3D Phone Perspective */
+.perspective-1000 {
+  perspective: 1200px;
+}
+
+.phone-mockup {
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.5s ease;
+}
+
+.phone-mockup:hover {
+  transform: rotateY(-6deg) rotateX(4deg) translateY(-8px);
+  box-shadow: 0 30px 60px -15px rgba(0, 240, 255, 0.3), 0 0 50px rgba(8, 29, 86, 0.9);
+}
+
+/* Custom Scrollbar for Phone Screen and Modals */
+.custom-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.5);
+  border-radius: 4px;
+}
+
+/* Breaker Switch Animation */
+.breaker-btn {
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.breaker-btn.open {
+  background-color: #1E293B !important;
+  border-color: #64748B !important;
+  color: #94A3B8 !important;
+  box-shadow: none !important;
+}
+
+.breaker-btn.closed {
+  background-color: #064E3B !important;
+  border-color: #10B981 !important;
+  color: #6EE7B7 !important;
+  box-shadow: 0 0 10px #10B981 !important;
+}
+
+/* Phone Tab Navigation */
+.phone-tab-btn.active {
+  color: #22D3EE;
+  background-color: rgba(6, 182, 212, 0.2);
+  font-weight: 700;
+}
+
+/* Modal Active State */
+#modal-vt.show {
+  opacity: 1;
+  pointer-events: auto;
+}

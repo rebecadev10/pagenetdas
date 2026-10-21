@@ -1,0 +1,9 @@
+# Evitar subir el APK de 324 MB al repositorio Git normal
+# (GitHub rechaza commits con archivos individuales mayores a 100 MB)
+# Recomendado: Subir el APK a la pestaña "Releases" de GitHub o Google Drive
+assets/*.apk
+*.apk
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
